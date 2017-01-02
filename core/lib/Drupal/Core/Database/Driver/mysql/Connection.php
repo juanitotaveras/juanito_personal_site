@@ -97,11 +97,11 @@ class Connection extends DatabaseConnection {
    */
   public static function open(array &$connection_options = array()) {
     if (isset($connection_options['_dsn_utf8_fallback']) && $connection_options['_dsn_utf8_fallback'] === TRUE) {
-      // Only used during the installer version check, as a fallback from utf8.
+      // Only used during the installer version check, as a fallback from utf8mb4.
       $charset = 'utf8';
     }
     else {
-      $charset = 'utf8';
+      $charset = 'utf8mb4';
     }
     // The DSN should use either a socket or a host/port.
     if (isset($connection_options['unix_socket'])) {
@@ -143,7 +143,7 @@ class Connection extends DatabaseConnection {
 
     // Force MySQL to use the UTF-8 character set. Also set the collation, if a
     // certain one has been set; otherwise, MySQL defaults to
-    // 'utf8_general_ci' for utf8.
+    // 'utf8mb4_general_ci' for utf8mb4.
     if (!empty($connection_options['collation'])) {
       $pdo->exec('SET NAMES ' . $charset . ' COLLATE ' . $connection_options['collation']);
     }

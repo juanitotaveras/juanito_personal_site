@@ -361,9 +361,17 @@ function install_begin_request($class_loader, &$install_state) {
   \Drupal::setContainer($container);
 
   // Determine whether base system services are ready to operate.
-  $install_state['config_verified'] = install_ensure_config_directory(CONFIG_SYNC_DIRECTORY);
+  try {
+    $sync_directory = config_get_config_directory(CONFIG_SYNC_DIRECTORY);
+    $install_state['config_verified'] = file_exists($sync_directory);
+  }
+  catch (Exception $e) {
+    $install_state['config_verified'] = FALSE;
+  }
   $install_state['database_verified'] = install_verify_database_settings($site_path);
-  $install_state['settings_verified'] = $install_state['config_verified'] && $install_state['database_verified'];
+  // A valid settings.php has database settings and a hash_salt value. Other
+  // settings like config_directories will be checked by system_requirements().
+  $install_state['settings_verified'] = $install_state['database_verified'] && (bool) Settings::get('hash_salt', FALSE);
 
   // Install factory tables only after checking the database.
   if ($install_state['database_verified'] && $install_state['database_ready']) {
@@ -482,7 +490,7 @@ function install_begin_request($class_loader, &$install_state) {
 
     // Do not install over a configured settings.php.
     if (Database::getConnectionInfo()) {
-      //throw new AlreadyInstalledException($container->get('string_translation'));
+      throw new AlreadyInstalledException($container->get('string_translation'));
     }
   }
 
@@ -490,7 +498,7 @@ function install_begin_request($class_loader, &$install_state) {
   if ($install_state['config_verified'] && empty($task)) {
     if (count($kernel->getConfigStorage()->listAll())) {
       $task = NULL;
-      //throw new AlreadyInstalledException($container->get('string_translation'));
+      throw new AlreadyInstalledException($container->get('string_translation'));
     }
   }
 
@@ -1071,7 +1079,7 @@ function install_verify_completed_task() {
   }
   if (isset($task)) {
     if ($task == 'done') {
-      //throw new AlreadyInstalledException(\Drupal::service('string_translation'));
+      throw new AlreadyInstalledException(\Drupal::service('string_translation'));
     }
     return $task;
   }
@@ -1108,7 +1116,7 @@ function install_verify_database_ready() {
 
   if ($database = Database::getConnectionInfo()) {
     if (Database::getConnection()->schema()->tableExists($table)) {
-      //throw new AlreadyInstalledException(\Drupal::service('string_translation'));
+      throw new AlreadyInstalledException(\Drupal::service('string_translation'));
     }
   }
 }
